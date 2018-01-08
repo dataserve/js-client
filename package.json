@@ -1,0 +1,32 @@
+{
+  "name": "dataserve-client",
+  "version": "0.0.1",
+  "description": "Client to connect to dataserve using the redis protocol",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dataserve/js-client.git"
+  },
+  "keywords": [
+    "dataserve",
+    "client",
+    "redis"
+  ],
+  "author": {
+    "name": "kdeegan",
+    "url": "https://github.com/kdeegan"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dataserve/js-client/issues"
+  },
+  "homepage": "https://github.com/dataserve/js-client",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "microtime": "^2.1.7",
+    "redis": "^2.8.0"
+  }
+}
