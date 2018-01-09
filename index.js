@@ -58,12 +58,6 @@ function ds(command, dbTable, payload) {
         let timeStart = microtime.now();
         
         state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, res) => {
-            if (state.fullDebug) {
-                debug(command, res.status ? 'SUCCESS' : 'FAIL', payload, res, (microtime.now() - timeStart) / 1000000);
-            } else {
-                debug(command, res.status ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
-            }
-            
             if (err) {
                 //need logging
                 reject('An internal error occurred: protocol');
@@ -71,8 +65,6 @@ function ds(command, dbTable, payload) {
                 return;
             }
             
-            //console.log('DS', res);
-
             try {
                 res = JSON.parse(res);
             } catch (err) {
@@ -87,6 +79,12 @@ function ds(command, dbTable, payload) {
                 reject('An unknown error occurred: missing');
                 
                 return;
+            }
+
+            if (state.fullDebug) {
+                debug(command, res.status ? 'SUCCESS' : 'FAIL', payload, res, (microtime.now() - timeStart) / 1000000);
+            } else {
+                debug(command, res.status ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
             }
             
             resolve(res);
