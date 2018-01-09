@@ -24,5 +24,5 @@ ds('add', 'user', { name: 'Joe', 'email': 'joe@joe.com', password: 'hunter2' });
 DS_ADD user {"name":"Joe", "email":"joe@joe.com","password":"hunter2"}
 
 // Debug outputs
-2018-01-08T23:53:53.436Z dataserve-client add [ 'user', '{"name":"Joe", "email":"joe@joe.com","password":"hunter2"}' ] 0.012563
+2018-01-08T23:53:53.436Z dataserve-client add [ 'user', '{"name":"Joe","email":"joe@joe.com","password":"hunter2"}' ] 0.012563
 ```
