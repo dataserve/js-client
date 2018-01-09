@@ -59,9 +59,9 @@ function ds(command, dbTable, payload) {
         
         state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, res) => {
             if (state.fullDebug) {
-                debug(command, payload, (microtime.now() - timeStart) / 1000000);
+                debug(command, res.status ? 'SUCCESS' : 'FAIL', payload, res, (microtime.now() - timeStart) / 1000000);
             } else {
-                debug(command, (microtime.now() - timeStart) / 1000000);
+                debug(command, res.status ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
             }
             
             if (err) {
