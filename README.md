@@ -1,4 +1,3 @@
-# js-client
 Client to connect to dataserve using the redis protocol
 
 ## Installation
@@ -12,7 +11,7 @@ npm install dataserve-client
 const { init: dsInit, ds } = require('dataserve-client');
 
 /**
- * @param {Object} redisOpt    options for node_redis: tcp/unix socket, port, etc
+ * @param {Object} redisOpt    options for require('redis').createClient(redisOpt): tcp/unix socket, port, etc
  * @param {Object} Promise     (optional) Promise library to use
  * @param {Object} fullDebug   (optional) output payload when DEBUG=dataserve-client is enabled
  */
