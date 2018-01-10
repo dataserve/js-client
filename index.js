@@ -57,39 +57,103 @@ function ds(command, dbTable, payload) {
 
         let timeStart = microtime.now();
         
-        state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, res) => {
+        state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, result) => {
             if (err) {
-                //need logging
-                reject('An internal error occurred: protocol');
+                reject('An internal error occurred: protocol: ' + err);
                 
                 return;
             }
             
             try {
-                res = JSON.parse(res);
+                result = JSON.parse(result);
             } catch (err) {
-                //need logging
                 reject('An internal error occurred: json');
                 
                 return;
             }
 
-            if (!res) {
-                //need logging
-                reject('An unknown error occurred: missing');
-                
+            try {
+                result = new Result().setResult(result);
+            } catch (err) {
+                reject(err);
+
                 return;
             }
 
+            Object.freeze(result);
+
             if (state.fullDebug) {
-                debug(command, res.status ? 'SUCCESS' : 'FAIL', payload, res, (microtime.now() - timeStart) / 1000000);
+                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, result.toObject(), (microtime.now() - timeStart) / 1000000);
             } else {
-                debug(command, res.status ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
+                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
             }
             
-            resolve(res);
+            resolve(result);
         });
     });
+}
+
+class Result {
+
+    constructor() {
+        this.status = null;
+
+        this.result = null;
+
+        this.error = null;
+
+        this.meta = {};
+
+        return this;
+    }
+
+    isSuccess() {
+        return this.status;
+    }
+
+    isError() {
+        return !this.status;
+    }
+
+    setResult(result) {
+        if (!result
+            || (typeof result.status === 'undefined' || result.status === null)
+            || (typeof result.result === 'undefined' && typeof result.error === 'undefined')
+            || typeof result.meta !== 'object') {
+            throw new Error('invalid result object');
+            
+            return;
+        }
+
+        this.status = result.status;
+
+        if (this.status) {
+            this.result = result.result;
+        } else {
+            this.error = result.error;
+        }
+
+        this.meta = result.meta;
+
+        return this;
+    }
+
+    toObject() {
+        if (this.status) {
+            return {
+                status: true,
+                result: this.result,
+                meta: this.meta,
+            };
+        };
+
+        return {
+            status: false,
+            error: this.error,
+            meta: this.meta,
+        };
+    }
+    
 }
 
 module.exports = {
