@@ -95,14 +95,18 @@ function ds(command, dbTable, payload) {
 
 class Result {
 
-    constructor() {
-        this.status = null;
+    constructor(status=null, res=null, meta={}) {
+        this.status = status;
 
-        this.result = null;
+        if (status !== null) {
+            if (status) {
+                this.result = res;
+            } else {
+                this.error = res;
+            }
+        }
 
-        this.error = null;
-
-        this.meta = {};
+        this.meta = meta;
 
         return this;
     }
@@ -159,4 +163,5 @@ class Result {
 module.exports = {
     init,
     ds,
+    Result,
 };
