@@ -17,6 +17,14 @@ class Model {
         });
     }
 
+    static getMany(input, ...opts) {
+        let payload = this.buildGetPayload(input, ...opts);
+
+        return ds('getMany', this.table, payload).then((result) => {
+            return this.returnModel(result, payload.fill);
+        });
+    }
+
     static inc(primaryKeyVal, ...opts) {
         return this.change('inc', primaryKeyVal, ...opts);
     }
@@ -58,7 +66,7 @@ class Model {
 
     static buildGetPayload(input, ...opts) {
         if (!opts.length) {
-            return primaryKeyVals;
+            return input;
         }
 
         let payload = input;
@@ -146,10 +154,6 @@ class Model {
                 this.addPayloadFill(val, opt[val]);
             });
         }
-    }
-        
-    static getMany(payload) {
-        return ds('getMany', this.table, payload);
     }
     
     constructor() {

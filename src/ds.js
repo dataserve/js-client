@@ -39,14 +39,20 @@ const ALLOWED_COMMANDS = {
     'set': 'DS_SET',
 };
 
+function createResult(status=null, data=null, meta={}) {
+    meta.generatedBy = 'dataserve-client';
+
+    return new Result(status, data, meta);
+}
+
 function ds(command, dbTable, payload) {
     if (!state.client) {
-        return Promise.reject('Client has not been connected');
+        return Promise.reject(createResult(false, 'Client has not been connected'));
     }
     
-    return new state.Promise((resolve, reject) => {        
+    return new state.Promise((resolve, reject) => {
         if (!ALLOWED_COMMANDS[command]) {
-            return reject('An invalid command was requested');
+            return reject(createResult(false, 'An invalid command was requested'));
         }
 
         if (payload) {
@@ -61,7 +67,7 @@ function ds(command, dbTable, payload) {
         
         state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, result) => {
             if (err) {
-                reject('An internal error occurred: protocol: ' + err);
+                reject(createResult(false, 'An internal error occurred: protocol: ' + err));
                 
                 return;
             }
@@ -69,7 +75,7 @@ function ds(command, dbTable, payload) {
             try {
                 result = JSON.parse(result);
             } catch (err) {
-                reject('An internal error occurred: json');
+                reject(createResult(false, 'An internal error occurred: json'));
                 
                 return;
             }
@@ -77,7 +83,7 @@ function ds(command, dbTable, payload) {
             try {
                 result = new Result().setResult(result);
             } catch (err) {
-                reject('An internal error occurred: result');
+                reject(createResult(false, 'An internal error occurred: result'));
 
                 return;
             }
