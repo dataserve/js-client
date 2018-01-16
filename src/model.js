@@ -5,100 +5,188 @@ const Result = require('./result');
 
 class Model {
 
-    static returnModel(result) {
+    static add(field, ...opts) {
+        return this.change('add', field, ...opts);
+    }
+
+    static get(input, ...opts) {
+        let payload = this.buildGetPayload(input, ...opts);
+        
+        return ds('get', this.table, payload).then((result) => {
+            return this.returnModel(result, payload.fill);
+        });
+    }
+
+    static inc(primaryKeyVal, ...opts) {
+        return this.change('inc', primaryKeyVal, ...opts);
+    }
+        
+    static remove(primaryKeyVal) {
+        return ds('remove', this.table, primaryKeyVal).then((result) => {
+            return;
+        });
+    }
+
+    static set(field, ...opts) {
+        return this.change('set', field, ...opts);
+    }
+    
+    static change(command, input, ...opts) {
+        let payload = command === 'inc' ?
+            this.buildIncPayload(input, ...opts) : this.buildChangePayload(input, ...opts);
+        
+        return ds(command, this.table, payload).then((result) => {
+            if (payload.outputStyle) {
+                return this.returnModel(result, payload.fill);
+            }
+        });
+    }
+
+    static returnModel(result, fill) {
         if (!result.data) {
-            return {};
+            return null;
         }
         
         if (!Array.isArray(result.data)) {
-            return {
-                model: (new this).setResult(result),
+            return (new this).setResult(result, fill);
+        }
+
+        return Object.keys(result.data).map(data => {
+            return (new this).setResult(new Result(true, data, result.meta), fill);
+        });
+    }
+
+    static buildGetPayload(input, ...opts) {
+        if (!opts.length) {
+            return primaryKeyVals;
+        }
+
+        let payload = input;
+        
+        if (typeof input !== 'object') {
+            payload = {
+                [this.primaryKey]: input,
             };
         }
 
-        return {
-            models: result.data.map(data => {
-                return (new this).setResult(new Result(true, data, result.meta));
-            }),
-        }
+        opts.forEach((opt) => {
+            if (typeof opt === 'boolean' || opt === 'BY_ID') {
+                if (opt) {
+                    payload.outputStyle = 'BY_ID';
+                }
+            } else {
+                this.addPayloadFill(payload, opt);
+            }
+        });
+
+        return payload;
     }
 
-    static change(command, payload, returnModel) {
-        if (returnModel) {
-            if (Array.isArray(payload)) {
-                payload = {
-                    fields: payload,
-                    outputStyle: 'RETURN_CHANGES',
-                };
-            } else {
-                payload = Object.assign({}, payload, { outputStyle: 'RETURN_CHANGES' });
-            }
+    static buildIncPayload(field, ...opts) {
+        if (!opts.length) {
+            return field;
         }
         
-        return ds(command, this.table, payload).then((result) => {
-            if (result.isError()) {
-                return { error: result };
-            }
+        let payload = {
+            [this.primaryKey]: field,
+        };
 
-            if (returnModel) {
-                return this.returnModel(result);
+        opts.forEach((opt) => {
+            if (typeof opt === 'boolean' || opt === 'RETURN_CHANGES') {
+                if (opt) {
+                    payload.outputStyle = 'RETURN_CHANGES';
+                }
+            } else {
+                this.addPayloadFill(payload, opt);
             }
-
-            return {};
         });
+
+        return payload;
     }
     
-    static add(payload, returnModel) {
-        return this.change('add', payload, returnModel);
-    }
+    static buildChangePayload(field, ...opts) {
+        let payload = {
+            fields: field,
+        };
 
-    static set(payload, returnModel) {
-        return this.change('set', payload, returnModel);
-    }
-
-    static inc(payload, returnModel) {
-        return this.change('inc', payload, returnModel);
-    }
-    
-    static get(primaryKeyVal) {
-        return ds('get', this.table, primaryKeyVal).then((result) => {
-            if (result.isError()) {
-                return { error: result };
+        if (!opts.length) {
+            return payload;
+        }
+        
+        opts.forEach((opt) => {
+            if (typeof opt === 'boolean' || opt === 'RETURN_CHANGES') {
+                if (opt) {
+                    payload.outputStyle = 'RETURN_CHANGES';
+                }
+            } else {
+                this.addPayloadFill(payload, opt);
             }
-
-            return this.returnModel(result);
         });
+
+        return payload;
     }
-    
-    remove(primaryKeyVal) {
-        return ds('remove', this.table, primaryKeyVal).then((result) => {
-            if (result.isError()) {
-                return { error: result };
+
+    static addPayloadFill(payload, opt, fillPass=true) {
+        if (!payload.fill) {
+            payload.fill = {};
+        }
+        
+        if (typeof opt === 'string') {
+            if (this.fills[opt]) {
+                payload.fill[this.fills[opt].tableName + ':' + opt] = fillPass;
+            } else {
+                payload.fill[opt] = fillPass;
             }
-            
-            return {};
-        });
+        } else if (Array.isArray(opt)) {
+            opt.forEach((val) => {
+                this.addPayloadFill(payload);
+            });
+        } else if (typeof opt === 'object') {
+            Object.keys(opt).forEach((val) => {
+                this.addPayloadFill(val, opt[val]);
+            });
+        }
     }
-
-    /*
-    getMulti(payload) {
-        return ds('get', this.table, payload);
+        
+    static getMany(payload) {
+        return ds('getMany', this.table, payload);
     }
-    */
     
     constructor() {
         this.data = null;
 
         this.meta = null;
 
+        this.fill = null;
+
+        this.primaryKey = this.constructor.primaryKey;
+
+        this.table = this.constructor.table;
+
         return this;
     }
 
+    val(field) {
+        if (this.data === null) {
+            return undefined;
+        }
+        
+        return this.data[field];
+    }
+
+    getMeta(field) {
+        if (this.meta === null) {
+            return undefined;
+        }
+        
+        return this.meta[field];
+    }
+    
     getTable() {
         return this.table;
     }
 
-    setResult(result) {
+    setResult(result, fill) {
         if (result.isError()) {
             throw new Error('Cannot set errored result to model');
         }
@@ -107,86 +195,90 @@ class Model {
 
         this.meta = result && result.meta || {};
 
+        if (this.data && typeof this.constructor.fills === 'object') {
+            for (let fillAlias in this.constructor.fills) {
+                if (!this.data[fillAlias]) {
+                    continue;
+                }
+                
+                this.data[fillAlias] = (new this.constructor.fills[fillAlias].model)
+                    .setResult(new Result(true, this.data[fillAlias]));
+            }
+        }
+
+        if (fill) {
+            this.fill = fill;
+        }
+
         return this;
     }
 
-    get() {
+    get(...opts) {
         if (!this.data[this.primaryKey]) {
             return state.Promise.reject('model not populated');
         }
+
+        if (this.fill) {
+            opts.push(this.fill);
+        }
+
+        let payload = this.constructor.buildGetPayload(this.data[this.primaryKey], ...opts);
         
-        return ds('get', this.table, this.data[this.primaryKey]).then((result) => {
-            if (result.isError()) {
-                return { error: result };
-            }
-
-            return this.setResult(result);
+        return ds('get', this.table, payload).then((result) => {
+            this.setResult(result, payload.fill);
         });
     }
 
-    change(command, payload, refreshModel) {
-        if (!this.data[this.primaryKey]) {
-            return state.Promise.reject('model not populated');
-        }
-
-        payload[this.primaryKey] = this.data[this.primaryKey];
-
-        if (refreshModel) {
-            payload = {
-                fields: payload,
-                outputStyle: 'RETURN_CHANGES',
-            };
-        }
-
-        return ds('set', this.table, payload).then((result) => {
-            if (result.isError()) {
-                return result;
-            }
-
-            if (refreshModel) {
-                this.setResult(result);
-            }
-
-            return null;
-        });
-    }
-    
-    add(payload, refreshModel) {
-        return this.change('add', payload, refreshModel);
+    set(field, refreshModel=true) {
+        return this.change('set', field, refreshModel);
     }
 
-    set(payload, refreshModel) {
-        return this.change('set', payload, refreshModel);
-    }
-
-    inc(payload, refreshModel) {
+    inc(payload, refreshModel=true) {
         return this.change('inc', payload, refreshModel);
     }
     
-    remove(payload) {
+    remove() {
         if (!this.data[this.primaryKey]) {
             return state.Promise.reject('model not populated');
         }
 
-        payload[this.primaryKey] = this.data[this.primaryKey];
-
-        return ds('remove', this.table, payload).then((result) => {
-            if (result.isError()) {
-                return result;
-            }
-
+        return ds('remove', this.table, this.data[this.primaryKey]).then((result) => {
             this.setResult(new Result(true, null, {}));
-
-            return null;
         });
     }
+    
+    change(command, input, refreshModel) {
+        if (!this.data[this.primaryKey]) {
+            return state.Promise.reject('model not populated');
+        }
 
-    /*
-    getMulti(payload) {
-        return ds('get', this.table, payload);
-    }    
-    */
+        let payload;
 
+        let opts = [];
+
+        if (refreshModel) {
+            opts = [true];
+
+            if (this.fill) {
+                opts.push(this.fill);
+            }
+        }
+        
+        if (command === 'inc') {
+            payload = this.constructor.buildIncPayload(input, ...opts);
+        } else {
+            input[this.primaryKey] = this.data[this.primaryKey];
+            
+            payload = this.constructor.buildChangePayload(input, ...opts);
+        }
+
+        return ds(command, this.table, payload).then((result) => {
+            if (payload.outputStyle) {
+                this.setResult(result);
+            }
+        });
+    }
+    
 }
 
 module.exports = Model;

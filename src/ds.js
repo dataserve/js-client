@@ -29,7 +29,7 @@ const ALLOWED_COMMANDS = {
     'get': 'DS_GET',
     'flushCache': 'DS_FLUSH_CACHE',
     'getCount': 'DS_GET_COUNT',
-    'getMulti': 'DS_GET_MULTI',
+    'getMany': 'DS_GET_MANY',
     'log': 'DS_LOG',
     'lookup': 'DS_LOOKUP',
     'outputCache': 'DS_OUTPUT_CACHE',
@@ -77,7 +77,7 @@ function ds(command, dbTable, payload) {
             try {
                 result = new Result().setResult(result);
             } catch (err) {
-                reject(err);
+                reject('An internal error occurred: result');
 
                 return;
             }
@@ -89,8 +89,12 @@ function ds(command, dbTable, payload) {
             } else {
                 debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
             }
-            
-            resolve(result);
+
+            if (result.isError()) {
+                reject(result);
+            } else {
+                resolve(result);
+            }
         });
     });
 }
