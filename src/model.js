@@ -5,8 +5,8 @@ const Result = require('./result');
 
 class Model {
 
-    static add(field, ...opts) {
-        return this.change('add', field, ...opts);
+    static add(fields, ...opts) {
+        return this.change('add', fields, ...opts);
     }
 
     static get(input, ...opts) {
@@ -35,8 +35,8 @@ class Model {
         });
     }
 
-    static set(field, ...opts) {
-        return this.change('set', field, ...opts);
+    static set(fields, ...opts) {
+        return this.change('set', fields, ...opts);
     }
     
     static change(command, input, ...opts) {
@@ -112,10 +112,16 @@ class Model {
         return payload;
     }
     
-    static buildChangePayload(field, ...opts) {
+    static buildChangePayload(fields, ...opts) {
         let payload = {
-            fields: field,
+            fields: fields,
         };
+
+        if (fields.fields
+            && typeof fields.fields === 'object'
+            && !Array.isArray(fields.fields)) {
+            payload = fields;
+        }
 
         if (!opts.length) {
             return payload;
@@ -141,7 +147,13 @@ class Model {
         
         if (typeof opt === 'string') {
             if (this.fills[opt]) {
-                payload.fill[this.fills[opt].tableName + ':' + opt] = fillPass;
+                let tableName = this.fills[opt].tableName;
+
+                if (tableName !== opt) {
+                    tableName += ':' + opt;
+                }
+                
+                payload.fill[tableName] = fillPass;
             } else {
                 payload.fill[opt] = fillPass;
             }
@@ -151,7 +163,7 @@ class Model {
             });
         } else if (typeof opt === 'object') {
             Object.keys(opt).forEach((val) => {
-                this.addPayloadFill(val, opt[val]);
+                this.addPayloadFill(payload, val, opt[val]);
             });
         }
     }
@@ -170,7 +182,7 @@ class Model {
         return this;
     }
 
-    val(field) {
+    d(field) {
         if (this.data === null) {
             return undefined;
         }
@@ -233,11 +245,11 @@ class Model {
         });
     }
 
-    set(field, refreshModel=true) {
-        return this.change('set', field, refreshModel);
+    set(fields, refreshModel=false) {
+        return this.change('set', fields, refreshModel);
     }
 
-    inc(payload, refreshModel=true) {
+    inc(payload, refreshModel=false) {
         return this.change('inc', payload, refreshModel);
     }
     
@@ -261,7 +273,7 @@ class Model {
         let opts = [];
 
         if (refreshModel) {
-            opts = [true];
+            opts = [ true ];
 
             if (this.fill) {
                 opts.push(this.fill);

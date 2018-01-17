@@ -40,8 +40,8 @@ class Result {
 
     setError(error, meta={}) {
         if (error instanceof Error) {
-            error = error.message;
-            //error = error.stack;
+            //error = error.message;
+            error = error.stack;
         }
         
         return this.setResult({
