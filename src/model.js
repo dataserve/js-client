@@ -28,6 +28,14 @@ class Model {
     static inc(primaryKeyVal, ...opts) {
         return this.change('inc', primaryKeyVal, ...opts);
     }
+
+    static lookup(payload, ...opts) {
+        payload = this.buildLookupPayload(payload, ...opts);
+        
+        return ds('lookup', this.table, payload).then((result) => {
+            return this.returnModel(result, payload.fill);            
+        });
+    }
         
     static remove(primaryKeyVal) {
         return ds('remove', this.table, primaryKeyVal).then((result) => {
@@ -71,7 +79,7 @@ class Model {
 
         let payload = input;
         
-        if (typeof input !== 'object') {
+        if (typeof input !== 'object' || Array.isArray(input)) {
             payload = {
                 [this.primaryKey]: input,
             };
@@ -131,6 +139,24 @@ class Model {
             if (typeof opt === 'boolean' || opt === 'RETURN_CHANGES') {
                 if (opt) {
                     payload.outputStyle = 'RETURN_CHANGES';
+                }
+            } else {
+                this.addPayloadFill(payload, opt);
+            }
+        });
+
+        return payload;
+    }
+
+    static buildLookupPayload(payload, ...opts) {
+        if (!opts.length) {
+            return payload;
+        }
+
+        opts.forEach((opt) => {
+            if (typeof opt === 'boolean' || opt === 'BY_ID') {
+                if (opt) {
+                    payload.outputStyle = 'BY_ID';
                 }
             } else {
                 this.addPayloadFill(payload, opt);
@@ -200,6 +226,10 @@ class Model {
     
     getTable() {
         return this.table;
+    }
+
+    toObject() {
+        return new Result(true, this.data, this.meta).toObject();
     }
 
     setResult(result, fill) {

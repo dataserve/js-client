@@ -3,6 +3,7 @@
 const debug = require('debug')('dataserve-client');
 const microtime = require('microtime');
 const Redis = require('redis');
+const uuid = require('uuid/v1');
 
 const Result = require('./result');
 
@@ -10,6 +11,7 @@ const state = {
     client: null,
     fullDebug: null,
     Promise: null,
+    commandLookup: {},
 };
 
 function init(redisOpt, promise, fullDebug) {
@@ -63,9 +65,17 @@ function ds(command, dbTable, payload) {
             payload = [];
         }
 
+        //const commandUuid = new Buffer(uuid().replace(/-/g, ''), 'hex').toString('base64');
+        //node_redis does toLowerCase on commands, so can't rely on case sensitivity of base64
+        const commandUuid = uuid().replace(/-/g, '');
+
+        const commandRaw = `${ALLOWED_COMMANDS[command]}:${commandUuid}`;
+
         let timeStart = microtime.now();
+
+        state.commandLookup[commandUuid] = [ command, payload, resolve, reject, timeStart ];
         
-        state.client.send_command(ALLOWED_COMMANDS[command], payload, (err, result) => {
+        state.client.send_command(commandRaw, payload, (err, result) => {
             if (err) {
                 reject(createResult(false, 'An internal error occurred: protocol: ' + err));
                 
@@ -88,12 +98,22 @@ function ds(command, dbTable, payload) {
                 return;
             }
 
+            if (result.meta.commandUuid && state.commandLookup[result.meta.commandUuid]) {
+                [ command, payload, resolve, reject, timeStart ] = state.commandLookup[result.meta.commandUuid];
+
+                delete state.commandLookup[result.meta.commandUuid];
+            } else {
+                reject(createResult(false, 'An internal error occurred: command UUID'));
+
+                return;
+            }
+
             Object.freeze(result);
 
             if (state.fullDebug) {
                 debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, result.toObject(), (microtime.now() - timeStart) / 1000000);
             } else {
-                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', (microtime.now() - timeStart) / 1000000);
+                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, (microtime.now() - timeStart) / 1000000);
             }
 
             if (result.isError()) {
