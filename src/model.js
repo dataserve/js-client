@@ -67,7 +67,7 @@ class Model {
             return (new this).setResult(result, fill);
         }
 
-        return Object.keys(result.data).map(data => {
+        return result.data.map(data => {
             return (new this).setResult(new Result(true, data, result.meta), fill);
         });
     }
@@ -246,7 +246,7 @@ class Model {
                 if (!this.data[fillAlias]) {
                     continue;
                 }
-                
+
                 this.data[fillAlias] = (new this.constructor.fills[fillAlias].model)
                     .setResult(new Result(true, this.data[fillAlias]));
             }
