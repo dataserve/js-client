@@ -91,7 +91,9 @@ class Model {
                     payload.outputStyle = 'BY_ID';
                 }
             } else {
-                this.addPayloadFill(payload, opt);
+                payload.fill = payload.fill || {};
+                
+                this.addFill(payload.fill, opt);
             }
         });
 
@@ -113,7 +115,9 @@ class Model {
                     payload.outputStyle = 'RETURN_CHANGES';
                 }
             } else {
-                this.addPayloadFill(payload, opt);
+                payload.fill = payload.fill || {};
+                
+                this.addFill(payload.fill, opt);
             }
         });
 
@@ -141,7 +145,9 @@ class Model {
                     payload.outputStyle = 'RETURN_CHANGES';
                 }
             } else {
-                this.addPayloadFill(payload, opt);
+                payload.fill = payload.fill || {};
+                
+                this.addFill(payload.fill, opt);
             }
         });
 
@@ -159,37 +165,45 @@ class Model {
                     payload.outputStyle = 'BY_ID';
                 }
             } else {
-                this.addPayloadFill(payload, opt);
+                payload.fill = payload.fill || {};
+                
+                this.addFill(payload.fill, opt);
             }
         });
 
         return payload;
     }
 
-    static addPayloadFill(payload, opt, fillPass=true) {
-        if (!payload.fill) {
-            payload.fill = {};
-        }
-        
+    static addFill(fill, opt, fillPass=true) {
         if (typeof opt === 'string') {
             if (this.fills[opt]) {
-                let tableName = this.fills[opt].tableName;
+                let tableName;
+
+                tableName = this.fills[opt].table;
 
                 if (tableName !== opt) {
                     tableName += ':' + opt;
                 }
                 
-                payload.fill[tableName] = fillPass;
+                fill[tableName] = fillPass;
+
+                return tableName;
             } else {
-                payload.fill[opt] = fillPass;
+                fill[opt] = fillPass;
+
+                return opt;
             }
         } else if (Array.isArray(opt)) {
             opt.forEach((val) => {
-                this.addPayloadFill(payload);
+                this.addFill(fill, val);
             });
         } else if (typeof opt === 'object') {
-            Object.keys(opt).forEach((val) => {
-                this.addPayloadFill(payload, val, opt[val]);
+            Object.keys(opt).forEach((key) => {
+                let added = this.addFill(fill, key, {});
+
+                for (let subKey in opt[key]) {
+                    this.fills[key].addFill(fill[added], subKey, opt[key][subKey]);
+                }
             });
         }
     }
@@ -247,8 +261,15 @@ class Model {
                     continue;
                 }
 
-                this.data[fillAlias] = (new this.constructor.fills[fillAlias].model)
-                    .setResult(new Result(true, this.data[fillAlias]));
+                if (Array.isArray(this.data[fillAlias])) {
+                    this.data[fillAlias] = this.data[fillAlias].map((data) => {
+                        return (new this.constructor.fills[fillAlias])
+                            .setResult(new Result(true, data))
+                    });
+                } else {
+                    this.data[fillAlias] = (new this.constructor.fills[fillAlias])
+                        .setResult(new Result(true, this.data[fillAlias]));
+                }
             }
         }
 
