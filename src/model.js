@@ -242,8 +242,12 @@ class Model {
         return this.table;
     }
 
+    toResult() {
+        return new Result(true, this.data, this.meta);
+    }
+    
     toObject() {
-        return new Result(true, this.data, this.meta).toObject();
+        this.toResult().toObject();
     }
 
     setResult(result, fill) {

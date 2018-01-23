@@ -52,12 +52,7 @@ class Result {
     }
     
     setResult(result) {
-        if (!result
-            || (typeof result.status === 'undefined' || result.status === null)
-            || (typeof result.data === 'undefined' && typeof result.error === 'undefined')
-            || typeof result.meta !== 'object') {
-            throw new Error('invalid result object');
-        }
+        result = this.sanitizeResult(result);
 
         this.status = result.status;
 
@@ -70,6 +65,48 @@ class Result {
         this.meta = result.meta;
 
         return this;
+    }
+
+    sanitizeResult(result) {
+        if (!result) {
+            result = {
+                status: false,
+                error: 'Unknown',
+                meta: {},
+            };
+        } else if (typeof result !== 'object') {
+            if (typeof result === 'string' || typeof result === 'boolean' || typeof result === 'number') {
+                result = {
+                    status: false,
+                    error: result,
+                    meta: {},
+                };
+            } else {
+                result = {
+                    status: false,
+                    error: 'Unknown',
+                    meta: {},
+                };
+            }
+        }
+        
+        if (typeof result.status !== 'boolean') {
+            result.status = false;
+        }
+
+        if (typeof result.data === 'undefined' && typeof result.error === 'undefined') {
+            if (result.status) {
+                result.data = null;
+            } else {
+                result.error = 'Unknown';
+            }
+        }
+
+        if (typeof result.meta !== 'object') {
+            result.meta = {};
+        }
+
+        return result;
     }
 
     toObject() {
