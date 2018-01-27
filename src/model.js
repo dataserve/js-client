@@ -29,11 +29,11 @@ class Model {
         return this.change('inc', primaryKeyVal, ...opts);
     }
 
-    static lookup(payload, ...opts) {
+    static lookup(payload={}, ...opts) {
         payload = this.buildLookupPayload(payload, ...opts);
         
         return ds('lookup', this.table, payload).then((result) => {
-            return this.returnModel(result, payload.fill);            
+            return this.returnModel(result, payload.fill);
         });
     }
         
