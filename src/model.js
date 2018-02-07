@@ -121,6 +121,10 @@ class Model {
             }
         });
 
+        if (payload.fill && Object.keys(payload.fill).length) {
+            payload.outputStyle = 'RETURN_CHANGES';
+        }
+
         return payload;
     }
     
@@ -138,7 +142,7 @@ class Model {
         if (!opts.length) {
             return payload;
         }
-        
+
         opts.forEach((opt) => {
             if (typeof opt === 'boolean' || opt === 'RETURN_CHANGES') {
                 if (opt) {
@@ -150,6 +154,10 @@ class Model {
                 this.addFill(payload.fill, opt);
             }
         });
+
+        if (payload.fill && Object.keys(payload.fill).length) {
+            payload.outputStyle = 'RETURN_CHANGES';
+        }
 
         return payload;
     }
@@ -300,12 +308,12 @@ class Model {
         });
     }
 
-    set(fields, refreshModel=false) {
-        return this.change('set', fields, refreshModel);
+    set(fields, ...opts) {
+        return this.change('set', fields, ...opts);
     }
 
-    inc(payload, refreshModel=false) {
-        return this.change('inc', payload, refreshModel);
+    inc(payload, ...opts) {
+        return this.change('inc', payload, ...opts);
     }
     
     remove() {
@@ -318,21 +326,15 @@ class Model {
         });
     }
     
-    change(command, input, refreshModel) {
+    change(command, input, ...opts) {
         if (!this.data[this.primaryKey]) {
             return state.Promise.reject('model not populated');
         }
 
         let payload;
 
-        let opts = [];
-
-        if (refreshModel) {
-            opts = [ true ];
-
-            if (this.fill) {
-                opts.push(this.fill);
-            }
+        if (this.fill) {
+            opts.push(this.fill);
         }
         
         if (command === 'inc') {
