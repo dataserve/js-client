@@ -17,6 +17,10 @@ class Model {
         });
     }
 
+    static getCount(input) {
+        return ds('getCount', this.table, input);
+    }
+    
     static getMany(input, ...opts) {
         let payload = this.buildGetPayload(input, ...opts);
 
