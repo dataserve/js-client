@@ -3,6 +3,7 @@
 const debug = require('debug')('dataserve-client');
 const microtime = require('microtime');
 const Redis = require('redis');
+const util = require('util');
 const uuid = require('uuid/v1');
 
 const Result = require('./result');
@@ -111,7 +112,7 @@ function ds(command, dbTable, payload) {
             Object.freeze(result);
 
             if (state.fullDebug) {
-                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, result.toObject(), (microtime.now() - timeStart) / 1000000);
+                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
             } else {
                 debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, (microtime.now() - timeStart) / 1000000);
             }
