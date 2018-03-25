@@ -38,6 +38,7 @@ const ALLOWED_COMMANDS = {
     'outputCache': 'DS_OUTPUT_CACHE',
     'outputDbSchema': 'DS_OUTPUT_DB_SCHEMA',
     'outputTableSchema': 'DS_OUTPUT_TABLE_SCHEMA',
+    'raw': 'DS_RAW',
     'remove': 'DS_REMOVE',
     'set': 'DS_SET',
 };
