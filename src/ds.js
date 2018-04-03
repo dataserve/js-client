@@ -1,12 +1,18 @@
 'use strict';
 
-const debug = require('debug')('dataserve-client');
+const debug = require('debug');
 const microtime = require('microtime');
 const Redis = require('redis');
 const util = require('util');
 const uuid = require('uuid/v1');
 
 const Result = require('./result');
+
+const log = debug('dataserve-client:info');
+
+log.log = console.log.bind(console);
+
+const error = debug('dataserve-client:error');
 
 const state = {
     client: null,
@@ -114,12 +120,12 @@ function ds(command, dbTable, payload) {
 
             if (result.isSuccess()) {
                 if (state.fullDebug) {
-                    debug(command, 'SUCCESS', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
+                    log(command, 'SUCCESS', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
                 } else {
-                    debug(command, 'SUCCESS', payload, (microtime.now() - timeStart) / 1000000);
+                    log(command, 'SUCCESS', payload, (microtime.now() - timeStart) / 1000000);
                 }
             } else {
-                console.error(command, 'FAIL', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
+                error(command, 'FAIL', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
             }
 
             if (result.isError()) {
