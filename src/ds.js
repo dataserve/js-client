@@ -112,10 +112,14 @@ function ds(command, dbTable, payload) {
 
             Object.freeze(result);
 
-            if (state.fullDebug) {
-                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
+            if (result.isSuccess()) {
+                if (state.fullDebug) {
+                    debug(command, 'SUCCESS', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
+                } else {
+                    debug(command, 'SUCCESS', payload, (microtime.now() - timeStart) / 1000000);
+                }
             } else {
-                debug(command, result.isSuccess() ? 'SUCCESS' : 'FAIL', payload, (microtime.now() - timeStart) / 1000000);
+                console.error(command, 'FAIL', payload, util.inspect(result.toObject(), false, null), (microtime.now() - timeStart) / 1000000);
             }
 
             if (result.isError()) {
