@@ -1,6 +1,6 @@
 {
   "name": "dataserve-client",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Client to connect to dataserve using the redis protocol",
   "main": "index.js",
   "scripts": {
@@ -25,9 +25,9 @@
   },
   "homepage": "https://github.com/dataserve/js-client",
   "dependencies": {
-    "debug": "^3.1.0",
-    "microtime": "^2.1.7",
+    "debug": "^4.1.1",
+    "microtime": "^3.0.0",
     "redis": "^2.8.0",
-    "uuid": "^3.2.1"
+    "uuid": "^3.3.2"
   }
 }
