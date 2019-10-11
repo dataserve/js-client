@@ -277,13 +277,19 @@ class Model {
                     continue;
                 }
 
+                let fillClass = this.constructor.fills[fillAlias];
+                
+                if (fillClass.isPolymorphic) {
+                    fillClass = fillClass.match[this.data[fillClass.column]];
+                }
+
                 if (Array.isArray(this.data[fillAlias])) {
                     this.data[fillAlias] = this.data[fillAlias].map((data) => {
-                        return (new this.constructor.fills[fillAlias])
+                        return (new fillClass)
                             .setResult(new Result(true, data))
                     });
                 } else {
-                    this.data[fillAlias] = (new this.constructor.fills[fillAlias])
+                    this.data[fillAlias] = (new fillClass)
                         .setResult(new Result(true, this.data[fillAlias]));
                 }
             }
