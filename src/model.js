@@ -191,10 +191,14 @@ class Model {
             if (this.fills[opt]) {
                 let tableName;
 
-                tableName = this.fills[opt].table;
+                if (this.fills[opt].isPolymorphic) {
+                    tableName = opt;
+                } else {
+                    tableName = this.fills[opt].table;
 
-                if (tableName !== opt) {
-                    tableName += ':' + opt;
+                    if (tableName !== opt) {
+                        tableName += ':' + opt;
+                    }
                 }
                 
                 fill[tableName] = fillPass;
